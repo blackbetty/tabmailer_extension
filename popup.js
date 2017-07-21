@@ -8,6 +8,12 @@
  * @param {function(string)} callback - called when the URL of the current tab
  *   is found.
  */
+
+//check to see if I am running this locally for dev mode
+function isDevMode() {
+    return !('update_url' in chrome.runtime.getManifest());
+}
+
 function getCurrentTabUrl(callback) {
     // Query filter to be passed to chrome.tabs.query - see
     // https://developer.chrome.com/extensions/tabs#method-query
@@ -35,9 +41,13 @@ function getCurrentTabUrl(callback) {
         console.assert(typeof url == 'string', 'tab.url should be a string');
         var request = new XMLHttpRequest();
 
-        request.open("POST", 'https://localhost:5000/savelink', true);
+        if (isDevMode()) {
+            request.open("POST", 'https://localhost:5000/savelink', true);
+        } else {
+            request.open("POST", 'https://tabmailer-174400.appspot.com/savelink', true);
+        }
         request.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
-        request.send(JSON.stringify({ tab_url: url}));
+        request.send(JSON.stringify({ tab_url: url }));
     });
 
     // Most methods of the Chrome extension APIs are asynchronous. This means that
