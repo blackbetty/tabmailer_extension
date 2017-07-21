@@ -1,8 +1,8 @@
 {
   "manifest_version": 2,
 
-  "name": "Getting started example",
-  "description": "This extension shows a Google Image search result for the current page",
+  "name": "TabMailer",
+  "description": "This extension saves your currently open tab and then emails you it at some later date",
   "version": "1.0",
 
   "browser_action": {
@@ -11,7 +11,8 @@
   },
   "permissions": [
     "activeTab",
-    "tabs"
-    "https://ajax.googleapis.com/"
+    "https://localhost/*",
+    "https://*/",
+    "http://*/"
   ]
 }
