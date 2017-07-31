@@ -27,7 +27,6 @@ function getCurrentTabUrl(callback) {
         var request = new XMLHttpRequest();
         request.onreadystatechange = function() { //Call a function when the state changes.
 
-            console.log("hit outside conditional");
             if (request.readyState == XMLHttpRequest.DONE && request.status == 200) {
                 callback(true, tab.url);
             } else if (request.readyState == XMLHttpRequest.DONE && request.status != 200) {
@@ -46,7 +45,7 @@ function getCurrentTabUrl(callback) {
 
 
 function showNotification(title, message) {
-    chrome.notifications.create('reminder', {
+    chrome.notifications.create(Math.rand, {
         type: 'basic',
         iconUrl: 'icon.png',
         title: title,
@@ -55,11 +54,23 @@ function showNotification(title, message) {
 
 }
 
+function closeCurrentTab() {
+    chrome.tabs.query({
+        active: true,
+        currentWindow: true
+    }, function(tabs) {
+
+        chrome.tabs.remove(tabs[0].id, function() {});
+    });
+
+}
+
 function displayCompletionMessage(completion, tabURL) {
     if (completion === true) {
         showNotification('Complete!', 'Successfully added ' + tabURL + ' to your TabMailer queue!');
+        closeCurrentTab();
     } else {
-        showNotification('Error!', 'Failed to add the URL: '+ tabURL +' to your TabMailer queue :(');
+        showNotification('Error!', 'Failed to add the URL: ' + tabURL + ' to your TabMailer queue :(');
     }
 };
 
