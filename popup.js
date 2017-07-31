@@ -9,10 +9,19 @@
  *   is found.
  */
 
-//check to see if I am running this locally for dev mode
+// Check to see if I am running this locally for dev mode
 function isDevMode() {
     return !('update_url' in chrome.runtime.getManifest());
 }
+
+var server_url = 'something went wrong if this logs';
+if (isDevMode()) {
+  server_url = 'https://localhost:5000/linksforuser';
+  console.log('requests will be sent to ' + server_url);
+} else {
+  server_url = 'https://tabmailer-174400.appspot.com/linksforuser';
+}
+
 
 function getCurrentTabUrl(callback) {
     // Query filter to be passed to chrome.tabs.query - see
@@ -41,11 +50,9 @@ function getCurrentTabUrl(callback) {
         console.assert(typeof url == 'string', 'tab.url should be a string');
         var request = new XMLHttpRequest();
 
-        if (isDevMode()) {
-            request.open("POST", 'https://localhost:5000/savelink', true);
-        } else {
-            request.open("POST", 'https://tabmailer-174400.appspot.com/savelink', true);
-        }
+        request.open("POST", server_url, true);
+
+
         request.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
         request.send(JSON.stringify({ tab_url: url }));
     });
