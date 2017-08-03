@@ -6,39 +6,25 @@ function isDevMode() {
 var server_url = 'something went wrong if this logs';
 if (isDevMode()) {
     server_url = 'https://localhost:5000/linksforuser';
-    console.log('requests will be sent to ' + server_url);
 } else {
     server_url = 'https://tabmailer-174400.appspot.com/linksforuser';
 }
-
 
 function getCurrentTabUrl(callback) {
     var queryInfo = {
         active: true,
         currentWindow: true
     };
-
     chrome.tabs.query(queryInfo, function(tabs) {
         var tab = tabs[0];
 
         var url = tab.url;
 
         console.assert(typeof url == 'string', 'tab.url should be a string');
-        var request = new XMLHttpRequest();
-        request.onreadystatechange = function() { //Call a function when the state changes.
 
-            if (request.readyState == XMLHttpRequest.DONE && request.status == 200) {
-                callback(true, tab.url);
-            } else if (request.readyState == XMLHttpRequest.DONE && request.status != 200) {
-                callback(false);
-            }
-        }
-        request.open("POST", server_url, true);
+        var post_data = { tab_url: url };
 
-
-        request.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
-        request.send(JSON.stringify({ tab_url: url }));
-        console.log("REQUEST SENT");
+        authenticatedXhr("POST", server_url, post_data, callback)
     });
 
 }
@@ -75,7 +61,63 @@ function displayCompletionMessage(completion, tabURL) {
 };
 
 
+
+
+
+// callback = function (error, httpStatus, responseText);
+function authenticatedXhr(method, url, req_body, callback) {
+    var retry = true;
+
+    function getTokenAndXhr() {
+
+        // for some reason the actual redirectMethod returns an additional /, which
+        // Google Console does not like, despite me registering that as a redirect URL...
+        var redirURL = 'https://hjckfmabbnhjkfejdmiecefhkbekkefe.chromiumapp.org';
+        chrome.identity.launchWebAuthFlow({
+                url: "https://accounts.google.com/o/oauth2/auth?client_id=881057203535-i7f0fqflce385r6u0p41nvseto0k8gbk.apps.googleusercontent.com&redirect_uri=" + redirURL + "&response_type=token&scope=https://www.googleapis.com/auth/userinfo.profile",
+                interactive: true
+            },
+            function(redirect_url) {
+                if (chrome.runtime.lastError) {
+                    callback(chrome.runtime.lastError);
+                    console.log(chrome.runtime.lastError);
+                    return;
+                }
+
+                // As if this whole process wasn't a big enough pain in the ass,
+                // this is C/P'd from SO because parsing this shit is not something I felt like doing
+                // seriously FU google
+                var access_token = new URL(redirect_url).hash.split('&').filter(function(el) { if (el.match('access_token') !== null) return true; })[0].split('=')[1];
+                req_body['google_auth_token'] = access_token;
+
+                var xhr = new XMLHttpRequest();
+                xhr.open(method, url, true);
+                xhr.setRequestHeader('Authorization',
+                    'Bearer ' + access_token);
+                xhr.setRequestHeader("Content-Type", "application/json");
+
+                xhr.onload = function() {
+                    if (this.status === 401 && retry) {
+                        // This status may indicate that the cached
+                        // access token was invalid. Retry once with
+                        // a fresh token.
+                        retry = false;
+                        chrome.identity.removeCachedAuthToken({ 'token': access_token },
+                            getTokenAndXhr);
+                        return;
+                    } else if (this.readyState == XMLHttpRequest.DONE && this.status == 200) {
+                        callback(true, req_body['tab_url']);
+                    } else if (this.readyState == XMLHttpRequest.DONE && this.status != 200) {
+                        callback(false);
+                    }
+                }
+                xhr.send(JSON.stringify(req_body));
+            });
+    }
+    getTokenAndXhr();
+}
+
 chrome.browserAction.onClicked.addListener(function(tab) {
-    // chrome.tabs.executeScript(null, {file: "sendURL.js"});
+
     getCurrentTabUrl(displayCompletionMessage);
 });
