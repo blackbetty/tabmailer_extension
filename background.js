@@ -4,7 +4,7 @@ function isDevMode() {
 }
 
 var server_url = 'something went wrong if this logs';
-if (isDevMode()) {
+if (1 == 1 /*isDevMode()*/ ) {
     server_url = 'https://localhost:5000/linksforuser';
 } else {
     server_url = 'https://tabmailer-174400.appspot.com/linksforuser';
@@ -19,10 +19,14 @@ function getCurrentTabUrl(callback) {
         var tab = tabs[0];
 
         var url = tab.url;
+        var title = tab.title;
 
         console.assert(typeof url == 'string', 'tab.url should be a string');
 
-        var post_data = { tab_url: url };
+        var post_data = {
+            tab_url: url,
+            tab_title: title
+        };
 
         authenticatedXhr("POST", server_url, post_data, callback)
     });
