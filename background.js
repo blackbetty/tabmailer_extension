@@ -4,11 +4,20 @@ function isDevMode() {
 }
 
 var server_url = 'something went wrong if this logs';
-if (1 == 1 /*isDevMode()*/ ) {
+if (1 == 0 /*isDevMode()*/ ) {
     server_url = 'https://localhost:5000/linksforuser';
 } else {
     server_url = 'https://tabmailer-174400.appspot.com/linksforuser';
 }
+
+chrome.runtime.onInstalled.addListener(function(object) {
+    if (object.reason === 'installed') {
+        chrome.tabs.create({ url: "https://tabmailer-174400.appspot.com/" }, function(tab) {
+            console.log("New tab launched with https://tabmailer-174400.appspot.com/");
+        });
+    }
+});
+
 
 function getCurrentTabUrl(callback) {
     var queryInfo = {
@@ -63,21 +72,21 @@ function displayCompletionMessage(completion, responseObject) {
             chrome.storage.sync.set({ 'settings': responseObject.newSettings }, function() {
                 // Notify that we saved.
                 console.log("WHAT IS GOING ON");
-                chrome.storage.sync.get('settings', function(items){
+                chrome.storage.sync.get('settings', function(items) {
                     console.log(items.settings);
                     console.log(items.settings["close_tab"]);
-                    if(items.settings["close_tab"] == "true"){
+                    if (items.settings["close_tab"] == "true") {
                         console.log('closetab is true')
                         closeCurrentTab();
                     }
                 });
             });
         } else {
-            chrome.storage.sync.get('settings', function(items){
-                    if(items.settings.close_tab == "true"){
-                        closeCurrentTab();
-                    }
-                })
+            chrome.storage.sync.get('settings', function(items) {
+                if (items.settings.close_tab == "true") {
+                    closeCurrentTab();
+                }
+            })
         }
     } else {
         showNotification('Error!', 'Failed to add the URL: ' + responseObject + ' to your TabMailer queue :(');
