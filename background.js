@@ -55,12 +55,32 @@ function closeCurrentTab() {
 
 }
 
-function displayCompletionMessage(completion, tabURL) {
+function displayCompletionMessage(completion, responseObject) {
     if (completion === true) {
-        showNotification('Complete!', 'Successfully added ' + tabURL + ' to your TabMailer queue!');
-        closeCurrentTab();
+        responseObject = JSON.parse(responseObject);
+        showNotification('Complete!', 'Successfully added ' + responseObject.saved_url + ' to your TabMailer queue!');
+        if (responseObject.newSettings) {
+            chrome.storage.sync.set({ 'settings': responseObject.newSettings }, function() {
+                // Notify that we saved.
+                console.log("WHAT IS GOING ON");
+                chrome.storage.sync.get('settings', function(items){
+                    console.log(items.settings);
+                    console.log(items.settings["close_tab"]);
+                    if(items.settings["close_tab"] == "true"){
+                        console.log('closetab is true')
+                        closeCurrentTab();
+                    }
+                });
+            });
+        } else {
+            chrome.storage.sync.get('settings', function(items){
+                    if(items.settings.close_tab == "true"){
+                        closeCurrentTab();
+                    }
+                })
+        }
     } else {
-        showNotification('Error!', 'Failed to add the URL: ' + tabURL + ' to your TabMailer queue :(');
+        showNotification('Error!', 'Failed to add the URL: ' + responseObject + ' to your TabMailer queue :(');
     }
 };
 
@@ -110,7 +130,7 @@ function authenticatedXhr(method, url, req_body, callback) {
                             getTokenAndXhr);
                         return;
                     } else if (this.readyState == XMLHttpRequest.DONE && this.status == 200) {
-                        callback(true, req_body['tab_url']);
+                        callback(true, this.response);
                     } else if (this.readyState == XMLHttpRequest.DONE && this.status != 200) {
                         callback(false);
                     }
