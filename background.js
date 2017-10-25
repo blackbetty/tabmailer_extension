@@ -11,11 +11,9 @@ if (1 == 0 /*isDevMode()*/ ) {
 }
 
 chrome.runtime.onInstalled.addListener(function(object) {
-    if (object.reason === 'installed') {
-        chrome.tabs.create({ url: "https://tabmailer-174400.appspot.com/" }, function(tab) {
-            console.log("New tab launched with https://tabmailer-174400.appspot.com/");
-        });
-    }
+    chrome.tabs.create({ url: "https://tabmailer-174400.appspot.com/" }, function(tab) {
+        console.log("New tab launched with https://tabmailer-174400.appspot.com/");
+    });
 });
 
 
