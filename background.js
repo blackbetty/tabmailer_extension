@@ -1,19 +1,26 @@
 // Check to see if I am running this locally for dev mode
-const SETTINGS_URL = "https://localhost:5000/settings";
+const SETTINGS_ENDPOINT = "/settings";
+const LINKS_POST_ENDPOINT = "/linksforuser"
 const REDIR_URL = 'https://hjckfmabbnhjkfejdmiecefhkbekkefe.chromiumapp.org';
+const IS_DEV_MODE = !('update_url' in chrome.runtime.getManifest());
 const WEB_AUTH_FLOW_URL_1 = "https://accounts.google.com/o/oauth2/auth?client_id=881057203535-i7f0fqflce385r6u0p41nvseto0k8gbk.apps.googleusercontent.com&redirect_uri=";
 const WEB_AUTH_FLOW_URL_2 = "&response_type=token&scope=https://www.googleapis.com/auth/userinfo.profile";
-
+var server_url = 'something went wrong if this logs';
 
 function isDevMode() {
-    return !('update_url' in chrome.runtime.getManifest());
+    chrome.management.getSelf(function(extensionInfo) {
+        if (extensionInfo.ExtensionInstallType == "development") {
+            return true;
+        }
+        return false
+    });
 }
 
-var server_url = 'something went wrong if this logs';
-if (1 == 0 /*isDevMode()*/ ) {
-    server_url = 'https://localhost:5000/linksforuser';
+if (IS_DEV_MODE) {
+    console.log('Extension running in development mode');
+    server_url = 'https://localhost:5000';
 } else {
-    server_url = 'https://tabmailer-174400.appspot.com/linksforuser';
+    server_url = 'https://tabmailer-174400.appspot.com';
 }
 
 
@@ -99,8 +106,8 @@ if (1 == 0 /*isDevMode()*/ ) {
 
 chrome.runtime.onInstalled.addListener(function(object) {
     if (chrome.runtime.OnInstalledReason.INSTALL === object.reason) {
-        chrome.tabs.create({ url: "https://tabmailer-174400.appspot.com/" }, function(tab) {
-            console.log("New tab launched with https://tabmailer-174400.appspot.com/");
+        chrome.tabs.create({ url: server_url }, function(tab) {
+            console.log("New tab launched with " + server_url);
         });
     }
 
@@ -133,7 +140,7 @@ function getCurrentTabUrl(callback) {
             tab_title: title
         };
 
-        authenticatedXhr("POST", server_url, post_data, callback)
+        authenticatedXhr("POST", server_url+LINKS_POST_ENDPOINT, post_data, callback)
     });
 
 }
@@ -154,7 +161,6 @@ function closeCurrentTab() {
         active: true,
         currentWindow: true
     }, function(tabs) {
-
         chrome.tabs.remove(tabs[0].id, function() {});
     });
 
