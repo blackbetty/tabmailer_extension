@@ -191,15 +191,18 @@ function displayCompletionMessage(responseObject, tabID) {
         responseObject.newSettings.close_tab = JSON.parse(responseObject.newSettings.close_tab);
         chrome.storage.sync.set({ 'LML_Settings': responseObject.newSettings }, () => {
             // Notify that we saved.
-            chrome.storage.sync.get('LML_Settings', (LMLSettingsContainer) => {
-                if (LMLSettingsContainer.LML_Settings.close_tab == true) {
+            chrome.storage.sync.get('LML_Settings', ({ LML_Settings }) => {
+                if (LML_Settings.close_tab == true) {
                     closeCurrentTab(tabID);
                 }
             });
         });
     } else {
-        chrome.storage.sync.get('LML_Settings', (LMLSettingsContainer) => {
-            if (LMLSettingsContainer.LML_Settings.close_tab == true) {
+        chrome.storage.sync.get('LML_Settings', ({ LML_Settings }) => {
+
+            if (typeof LML_Settings.close_tab === 'string') LML_Settings.close_tab = JSON.parse(LML_Settings.close_tab);
+
+            if (LML_Settings.close_tab == true) {
                 closeCurrentTab(tabID);
             }
         })
