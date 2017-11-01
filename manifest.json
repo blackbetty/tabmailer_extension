@@ -3,13 +3,16 @@
 
     "name": "LinkMeLater",
     "description": "This extension saves your currently open tab and then emails you it at some later date",
-    "version": "1.1.7",
+    "version": "1.1.8",
     "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAzT1V/mQT6MlLZUYE5u4d4HpI9j3SMe3cudjAlw+w3QteoCrX0CBwcAYea6/6WPHvwrdx/O04TUVPKLmWdYiyBfwoqSG9SQmqtzhQzVhPnqTnNkiBL6N458AepRbHz2DvYyd7ibTb6yXvFRZ5O6GQ/yxeS3axkvykFOc7C3J48TasFURuRd+VCiCKXqmQoTJY4A1n98C0gey0CrfwRImJl5YzxwpV/vV84L6ij49Eoc1iliSXEPkxp3/vXN563yfeXeVtXrraEoo46RfidwT74pepybfZladqbo87qSbYknSG3UkcTYbkJThEVGTgY/uAtYQoyVXiu0ZN9tPbkUKA9QIDAQAB",
     "background":
     {
-        "scripts": ["background.js"],
-        "persistent": false
+        "scripts": [
+            "scripts/background.js",
+            "scripts/contextmenu.js"
+        ]
     },
+    "content_security_policy": "script-src 'self' https://apis.google.com; object-src 'self'",
     "browser_action":
     {
         "default_icon": "icon.png"
@@ -24,6 +27,7 @@
         "activeTab",
         "identity",
         "notifications",
+        "contextMenus",
         "https://localhost/*",
         "https://*/",
         "http://*/",
@@ -34,7 +38,7 @@
     {
         "client_id": "881057203535-n59c3sm4cq8eqi0j08ns32top9ft6vda.apps.googleusercontent.com",
         "scopes": [
-            "profile"
+            "openid", "email", "profile"
         ]
     }
 }

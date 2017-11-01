@@ -6,6 +6,10 @@ const IS_DEV_MODE = !('update_url' in chrome.runtime.getManifest());
 const WEB_AUTH_FLOW_URL_1 = "https://accounts.google.com/o/oauth2/auth?client_id=881057203535-i7f0fqflce385r6u0p41nvseto0k8gbk.apps.googleusercontent.com&redirect_uri=";
 const WEB_AUTH_FLOW_URL_2 = "&response_type=token&scope=https://www.googleapis.com/auth/userinfo.profile";
 var server_url = 'something went wrong if this logs';
+// Using chrome.identity
+var manifest = chrome.runtime.getManifest();
+
+
 
 function isDevMode() {
     chrome.management.getSelf(function(extensionInfo) {
@@ -132,6 +136,10 @@ function getCurrentTabUrl(callback) {
 
         var url = tab.url;
         var title = tab.title;
+        var tabID = tab.id;
+        if (tabID == null || tabID == chrome.tabs.TAB_ID_NONE) {
+            tabID = null;
+        }
 
         console.assert(typeof url == 'string', 'tab.url should be a string');
 
@@ -140,7 +148,7 @@ function getCurrentTabUrl(callback) {
             tab_title: title
         };
 
-        authenticatedXhr("POST", server_url+LINKS_POST_ENDPOINT, post_data, callback)
+        authenticatedXhr("POST", server_url + LINKS_POST_ENDPOINT, post_data, callback)
     });
 
 }
@@ -165,6 +173,7 @@ function closeCurrentTab() {
     });
 
 }
+
 
 function displayCompletionMessage(completion, responseObject) {
     if (completion === true) {
@@ -208,18 +217,19 @@ function authenticatedXhr(method, url, req_body, callback) {
                 url: "https://accounts.google.com/o/oauth2/auth?client_id=881057203535-i7f0fqflce385r6u0p41nvseto0k8gbk.apps.googleusercontent.com&redirect_uri=" + redirURL + "&response_type=token&scope=https://www.googleapis.com/auth/userinfo.profile",
                 interactive: true
             },
-            function(redirect_url) {
+            function(redirected_to) {
                 if (chrome.runtime.lastError) {
                     callback(chrome.runtime.lastError);
                     console.log(chrome.runtime.lastError);
+                    if(IS_DEV_MODE) console.log('Remember to add the key field to the manifest, hermano');
                     return;
                 }
 
                 // As if this whole process wasn't a big enough pain in the ass,
                 // this is C/P'd from SO because parsing this shit is not something I felt like doing
                 // seriously FU google
-                var access_token = new URL(redirect_url).hash.split('&').filter(function(el) { if (el.match('access_token') !== null) return true; })[0].split('=')[1];
-                req_body['google_auth_token'] = access_token;
+                var access_token = new URL(redirected_to).hash.split('&').filter(function(el) { if (el.match('access_token') !== null) return true; })[0].split('=')[1];
+                req_body['google_access_token'] = access_token;
 
                 var xhr = new XMLHttpRequest();
                 xhr.open(method, url, true);
@@ -233,8 +243,12 @@ function authenticatedXhr(method, url, req_body, callback) {
                         // access token was invalid. Retry once with
                         // a fresh token.
                         retry = false;
-                        chrome.identity.removeCachedAuthToken({ 'token': access_token },
-                            getTokenAndXhr);
+                        chrome.identity.launchWebAuthFlow({ 'url': 'https://accounts.google.com/logout' },
+                            function(tokenUrl) {
+                                console.log('wtf is going on');
+                                getTokenAndXhr();
+                            }
+                        );
                         return;
                     } else if (this.readyState == XMLHttpRequest.DONE && this.status == 200) {
                         callback(true, this.response);
@@ -248,7 +262,9 @@ function authenticatedXhr(method, url, req_body, callback) {
     getTokenAndXhr();
 }
 
+
 chrome.browserAction.onClicked.addListener(function(tab) {
 
     getCurrentTabUrl(displayCompletionMessage);
+
 });
