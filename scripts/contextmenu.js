@@ -1,6 +1,7 @@
 var server_url = 'https://tabmailer-174400.appspot.com';
+const CM_IS_DEV_MODE = !('update_url' in chrome.runtime.getManifest());
 
-if (IS_DEV_MODE) {
+if (CM_IS_DEV_MODE) {
     console.log('Extension running in development mode');
     server_url = 'https://localhost:5000';
 } else {
