@@ -187,7 +187,7 @@ function closeCurrentTab(tabID) {
 
 function displayCompletionMessage(responseObject, tabID) {
     responseObject = JSON.parse(responseObject);
-    showNotification('Complete!', 'Successfully added ' + responseObject.saved_url + ' to your TabMailer queue!');
+    showNotification('Complete!', 'Successfully added ' + responseObject.saved_url + ' to your LinkMeLater queue!');
     if (responseObject.newSettings) {
         responseObject.newSettings.close_tab = JSON.parse(responseObject.newSettings.close_tab);
         chrome.storage.sync.set({ 'LML_Settings': responseObject.newSettings }, () => {
@@ -258,7 +258,7 @@ function authenticatedXhr(method, url, req_body) {
                         } else if (this.readyState == XMLHttpRequest.DONE && this.status == 200) {
                             resolve(this.response);
                         } else if (this.readyState == XMLHttpRequest.DONE && this.status != 200) {
-                            reject(this.statusText);
+                            reject(JSON.parse(this.response));
                         }
                     }
                     xhr.send(JSON.stringify(req_body));
@@ -281,11 +281,11 @@ chrome.browserAction.onClicked.addListener(function(tab) {
         tabTitle = await postData.tab_id;
         authenticatedXhr("POST", server_url + LINKS_POST_ENDPOINT, reqBody)
             .then(response => displayCompletionMessage(response, tabID))
-            .catch((error) => {
-                var displayErrorMessage = 'an error occurred displaying the completiong notification or closing your tab: ' + error
+            .catch(( error ) => {
+                var displayErrorMessage = 'Error: ' + error.message;
                 showNotification('Error!', displayErrorMessage);
-                console.log(displayErrorMessage)
-            });;
+                console.log(error.name);
+            });
     }).catch((error) => {
         showNotification('Error!', 'Failed to add the URL: ' + tabTitle + ' to your TabMailer queue :(');
         console.log("An error occurred somewhere in the LINK POST: " + error);
