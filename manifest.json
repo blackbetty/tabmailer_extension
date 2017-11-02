@@ -3,7 +3,7 @@
 
     "name": "LinkMeLater",
     "description": "This extension saves your currently open tab and then emails you it at some later date",
-    "version": "1.1.8",
+    "version": "1.1.9",
     "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAzT1V/mQT6MlLZUYE5u4d4HpI9j3SMe3cudjAlw+w3QteoCrX0CBwcAYea6/6WPHvwrdx/O04TUVPKLmWdYiyBfwoqSG9SQmqtzhQzVhPnqTnNkiBL6N458AepRbHz2DvYyd7ibTb6yXvFRZ5O6GQ/yxeS3axkvykFOc7C3J48TasFURuRd+VCiCKXqmQoTJY4A1n98C0gey0CrfwRImJl5YzxwpV/vV84L6ij49Eoc1iliSXEPkxp3/vXN563yfeXeVtXrraEoo46RfidwT74pepybfZladqbo87qSbYknSG3UkcTYbkJThEVGTgY/uAtYQoyVXiu0ZN9tPbkUKA9QIDAQAB",
     "background":
     {
