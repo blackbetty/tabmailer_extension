@@ -80,7 +80,8 @@ function authenticatedGET(url) {
                         }
                     }
                     xhr.send();
-                });
+                }
+            );
         }
         getTokenAndXhr();
 
