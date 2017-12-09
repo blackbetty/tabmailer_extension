@@ -1,32 +1,36 @@
-// Check to see if I am running this locally for dev mode
+/* eslint no-console: 0 */
+/* global chrome */
 const LINKS_POST_ENDPOINT = '/linksforuser';
 const REDIR_URL = 'https://hjckfmabbnhjkfejdmiecefhkbekkefe.chromiumapp.org';
+// Check to see if I am running this locally for dev mode
 const IS_DEV_MODE = !('update_url' in chrome.runtime.getManifest());
 const WEB_AUTH_FLOW_URL_1 = 'https://accounts.google.com/o/oauth2/auth?client_id=881057203535-i7f0fqflce385r6u0p41nvseto0k8gbk.apps.googleusercontent.com&redirect_uri=';
 const WEB_AUTH_FLOW_URL_2 = '&response_type=token&scope=https://www.googleapis.com/auth/userinfo.profile';
 const SETTINGS_ENDPOINT = '/settings';
-var server_url = 'something went wrong if this logs';
+var bg_server_url = 'something went wrong if this logs';
 // Using chrome.identity
 var manifest = chrome.runtime.getManifest();
 
 
 
-function isDevMode() {
-	chrome.management.getSelf(function (extensionInfo) {
-		if (extensionInfo.ExtensionInstallType == 'development') {
-			return true;
-		}
-		return false;
-	});
-}
+// function isDevMode() {
+// 	chrome.management.getSelf(function (extensionInfo) {
+// 		if (extensionInfo.ExtensionInstallType == 'development') {
+// 			return true;
+// 		}
+// 		return false;
+// 	});
+// }
 
 if (IS_DEV_MODE) {
-	console.log('Extension running in development mode');
-	server_url = 'https://localhost:5000';
+	console.log('Background: Extension running in development mode');
+	bg_server_url = 'https://localhost:5000';
 } else {
-	server_url = 'https://tabmailer-174400.appspot.com';
+	bg_server_url = 'https://linkmelater.win';
 }
 
+// bg_server_url = 'https://localhost:5000';
+// console.log(bg_server_url);
 
 // All useless
 // for now, need to standardize auth path
@@ -92,48 +96,54 @@ function authenticatedGET(url) {
 	});
 }
 
+/*
+	ContextMenu handles this now
+*/
+
+// var getSettings = async function () {
+
+// 	var settings;
+// 	try {
+// 		settings = await authenticatedGET(bg_server_url + SETTINGS_ENDPOINT);
+// 		return settings;
+// 	} catch (error) {
+// 		console.log('Settings Fetch Failed: ' + error);
+// 		throw new Error(error);
+// 	}
+// };
 
 
-var getSettings = async function () {
-
-	var settings;
-	try {
-		settings = await authenticatedGET(server_url + SETTINGS_ENDPOINT);
-		return settings;
-	} catch (error) {
-		console.log('Settings Fetch Failed: ' + error);
-		throw new Error(error);
-	}
-};
-
-
-const setLocalSettings = function (settings) {
+const initiateCloseTabSetting = function () {
 
 	chrome.storage.sync.set({
-		'LML_Settings': JSON.parse(settings)
+		'LML_Close_Tab_Setting': false
 	}, function () {
-		console.log('Settings saved locally');
+		console.log('Local Close Tab Setting Created');
 	});
 };
 
 
 chrome.runtime.onInstalled.addListener(async function (object) {
-	if (chrome.runtime.OnInstalledReason.INSTALL === object.reason) {
+	if (object.reason === chrome.runtime.OnInstalledReason.INSTALL) {
+		initiateCloseTabSetting();
 		chrome.tabs.create({
-			url: server_url
+			url: bg_server_url
 		}, function (tab) {
-			console.log('New tab launched with ' + server_url);
+			console.log('New tab launched with ' + bg_server_url);
 		});
 	}
-
-	var settings;
-	try {
-		settings = await getSettings();
-	} catch (error) {
-		console.log('Settings error hit top level: ' + error);
-	}
-	console.log('1: ' + settings);
-	if (settings != undefined) setLocalSettings(settings);
+	/* 	server-side settings are now no-longer relevant to the extension, close setting is now local
+		commenting out on 12/9/17
+		can delete once user-tested
+	*/ 
+	// var settings;
+	// try {
+	// 	settings = await getSettings();
+	// } catch (error) {
+	// 	console.log('Settings error hit top level: ' + error);
+	// }
+	// console.log('1: ' + settings);
+	// if (settings != undefined) setLocalSettings(settings);
 
 });
 
@@ -199,32 +209,15 @@ function closeCurrentTab(tabID) {
 function displayCompletionMessage(responseObject, tabID) {
 	responseObject = JSON.parse(responseObject);
 	showNotification('Complete!', 'Successfully added ' + responseObject.saved_url + ' to your LinkMeLater queue!');
-	if (responseObject.newSettings) {
-		responseObject.newSettings.close_tab = JSON.parse(responseObject.newSettings.close_tab);
-		chrome.storage.sync.set({
-			'LML_Settings': responseObject.newSettings
-		}, () => {
-			// Notify that we saved.
-			chrome.storage.sync.get('LML_Settings', ({
-				LML_Settings
-			}) => {
-				if (LML_Settings.close_tab == true) {
-					closeCurrentTab(tabID);
-				}
-			});
-		});
-	} else {
-		chrome.storage.sync.get('LML_Settings', ({
-			LML_Settings
-		}) => {
 
-			if (typeof LML_Settings.close_tab === 'string') LML_Settings.close_tab = JSON.parse(LML_Settings.close_tab);
+	chrome.storage.sync.get('LML_Close_Tab_Setting', ({
+		LML_Close_Tab_Setting = false
+	}) => {
 
-			if (LML_Settings.close_tab == true) {
-				closeCurrentTab(tabID);
-			}
-		});
-	}
+		if (LML_Close_Tab_Setting == true) {
+			closeCurrentTab(tabID);
+		}
+	});
 }
 
 // callback = function (error, httpStatus, responseText);
@@ -300,7 +293,7 @@ chrome.browserAction.onClicked.addListener(function (tab) {
 		};
 		tabID = await postData.tab_id;
 		tabTitle = await postData.tab_id;
-		authenticatedXhr('POST', server_url + LINKS_POST_ENDPOINT, reqBody)
+		authenticatedXhr('POST', bg_server_url + LINKS_POST_ENDPOINT, reqBody)
 			.then(response => displayCompletionMessage(response, tabID))
 			.catch((error) => {
 				var displayErrorMessage = 'Error: ' + error.message;
